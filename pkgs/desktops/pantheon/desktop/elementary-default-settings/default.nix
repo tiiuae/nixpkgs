@@ -15,13 +15,13 @@
 
 stdenv.mkDerivation rec {
   pname = "elementary-default-settings";
-  version = "6.0.2";
+  version = "7.0.0";
 
   src = fetchFromGitHub {
     owner = "elementary";
     repo = "default-settings";
     rev = version;
-    sha256 = "sha256-qaPj/Qp7RYzHgElFdM8bHV42oiPUbCMTC9Q+MUj4Q6Y=";
+    sha256 = "sha256-QNPXZerpH/JSL6QNJPYKplQYk1mgBeWcBthvuTnGJjo=";
   };
 
   nativeBuildInputs = [

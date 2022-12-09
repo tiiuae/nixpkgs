@@ -10,9 +10,9 @@ this library explicitly doesn't support build-time or run-time paths, including 
 
 Overall, this library works with two basic forms of paths:
 - Absolute paths are represented with the Nix path value type. Nix automatically normalises these paths.
-- Relative paths are represented with the string value type. This library normalises these paths as safely as possible.
+- Subpaths are represented with the string value type. This library normalises these paths as safely as possible. In the end, subpaths are intended to be used to refer to a specific file/directory nested in an absolute base directory. Subpaths are a more strict form of relative paths, notably [without supporting `..` references](#parents).
 
-Notably absolute paths in a string value type are not supported, the use of the string value type for relative paths is only because the path value type doesn't support relative paths.
+Notably absolute paths in a string value type are not supported, the use of the string value type for subpaths is only because the path value type doesn't support subpaths.
 
 This library is designed to be as safe and intuitive as possible, throwing errors when operations are attempted that would produce surprising results, and giving the expected result otherwise.
 
@@ -20,7 +20,7 @@ This library is designed to work well as a dependency for the `lib.filesystem` a
 
 This library makes only these assumptions about paths and no others:
 - `dirOf path` returns the path to the parent directory of `path`, unless `path` is the filesystem root, in which case `path` is returned
-  - There can be multiple filesystem roots: `p == dirOf p` and `q == dirOf p` does not imply `p == q`
+  - There can be multiple filesystem roots: `p == dirOf p` and `q == dirOf q` does not imply `p == q`
     - While there's only a single filesystem root in stable Nix, the [lazy trees PR](https://github.com/NixOS/nix/pull/6530) introduces [additional filesystem roots](https://github.com/NixOS/nix/pull/6530#discussion_r1041442173)
 - `path + ("/" + string)` returns the path to the `string` subdirectory in `path`
   - If `string` contains no `/` characters, then `dirOf (path + ("/" + string)) == path`
@@ -33,18 +33,20 @@ Notably we do not make the assumption that we can turn paths into strings using 
 
 Each subsection here contains a decision along with arguments and counter-arguments for (+) and against (-) that decision.
 
-### Leading dots for relative paths
-[leading-dots]: #leading-dots-for-relative-paths
+### Leading dots for subpaths
+[leading-dots]: #leading-dots-for-subpaths
 
-Context: Relative paths can have a leading `./` to indicate it being a relative path, this is generally not necessary for tools though
+Observing: Since subpaths are a form of relative paths, they can have a leading `./` to indicate it being a relative path, this is generally not necessary for tools though
 
-Decision: Returned relative paths should always have a leading `./`
+Considering: Paths should be as explicit, consistent and unambiguous as possible
+
+Decision: Returned subpaths should always have a leading `./`
 
 <details>
 <summary>Arguments</summary>
 
 - :heavy_plus_sign: In shells, just running `foo` as a command wouldn't execute the file `foo`, whereas `./foo` would execute the file. In contrast, `foo/bar` does execute that file without the need for `./`. This can lead to confusion about when a `./` needs to be prefixed. If a `./` is always included, this becomes a non-issue. This effectively then means that paths don't overlap with command names.
-- :heavy_plus_sign: Prepending with `./` makes the relative paths always valid as Nix path expressions
+- :heavy_plus_sign: Prepending with `./` makes the subpaths always valid as relative Nix path expressions
 - :heavy_plus_sign: Using paths in command line arguments could give problems if not escaped properly, e.g. if a path was `--version`. This is not a problem with `./--version`. This effectively then means that paths don't overlap with GNU-style command line options
 - :heavy_minus_sign: `./` is not required to resolve relative paths, resolution always has an implicit `./` in front
 - :heavy_minus_sign: It's more pretty without the `./`, good for error messages and co.
@@ -62,7 +64,9 @@ Decision: Returned relative paths should always have a leading `./`
 ### Representation of the current directory
 [curdir]: #representation-of-the-current-directory
 
-Context: The current directory can be represented with `.` or `./` or `./.`
+Observing: The subpath that produces the base directory can be represented with `.` or `./` or `./.`
+
+Considering: Paths should be as consistent and unambiguous as possible
 
 Decision: It should be `./.`
 
@@ -75,16 +79,19 @@ Decision: It should be `./.`
 - :heavy_plus_sign: `.` would be the only path without a `/` and therefore not a valid Nix path in expressions
 - :heavy_minus_sign: `./.` is rather long
   - :heavy_minus_sign: We don't require users to type this though, it's mainly just used as a library output.
-    As inputs all three variants are supported for relative paths (and we can't do anything about absolute paths)
+    As inputs all three variants are supported for subpaths (and we can't do anything about absolute paths)
 - :heavy_minus_sign: `builtins.dirOf "foo" == "."`, so `.` would be consistent with that
 - :heavy_plus_sign: `./.` is consistent with the [decision to have leading `./`](#leading-dots)
+- :heavy_plus_sign: `./.` is a valid Nix path expression, although this property does not hold for every relative path or subpath
 
 </details>
 
-### Relative path representation
-[relrepr]: #relative-path-representation
+### Subpath representation
+[relrepr]: #subpath-representation
 
-Context: Relative paths can be represented as a string, a list with all the components like `[ "foo" "bar" ]` for `foo/bar`, or with an attribute set like `{ type = "relative-path"; components = [ "foo" "bar" ]; }`
+Observing: Subpaths can be represented as a string, a list with all the components like `[ "foo" "bar" ]` for `foo/bar`, or with an attribute set like `{ type = "subpath"; components = [ "foo" "bar" ]; }`
+
+Considering: Paths should be as safe to use as possible, we should generate string outputs in the library and not encourage users to do that instead by returning lists
 
 Decision: Paths are represented as strings
 
@@ -92,7 +99,7 @@ Decision: Paths are represented as strings
 <summary>Arguments</summary>
 
 - :heavy_plus_sign: It's simpler for the end user, as one doesn't need to make sure the path is in a string representation before it can be used
-  - :heavy_plus_sign: Also `concatStringsSep "/"` might be used to turn a relative list path value into a string, which then breaks for `[]`
+  - :heavy_plus_sign: Also `concatStringsSep "/"` might be used to turn a list subpath value into a string, which then breaks for `[]`
 - :heavy_plus_sign: It doesn't encourage people to do their own path processing and instead use the library
   E.g. With lists it would be very easy to just use `lib.lists.init` to get the parent directory, but then it breaks for `.`, represented as `[ ]`
 - :heavy_plus_sign: `+` is convenient and doesn't work on lists and attribute sets
@@ -103,14 +110,18 @@ Decision: Paths are represented as strings
 ### Parents
 [parents]: #parents
 
-Context: Relative paths can have `..` components, which refer to the parent directory
+Observing: Relative paths can have `..` components, which refer to the parent directory
 
-Decision: `..` path components in relative paths are not supported, nor as inputs nor as outputs.
+Considering: Paths should be as safe and unambiguous as possible
+
+Decision: `..` path components in string paths are not supported, neither as inputs nor as outputs. Hence, string paths are called subpaths, rather than relative paths.
 
 <details>
 <summary>Arguments</summary>
 
-- :heavy_plus_sign: It requires resolving symlinks to have proper behavior, since e.g. `foo/..` would not be the same as `.` if `foo` is a symlink.
+- :heavy_plus_sign: If we wanted relative paths to behave according to the "physical" interpretation (as a directory tree with relations between nodes), it would require resolving symlinks, since e.g. `foo/..` would not be the same as `.` if `foo` is a symlink.
+  - :heavy_minus_sign: The "logical" interpretation is also valid (treating paths as a sequence of names), and is used by some software. It is simpler, and not using symlinks at all is safer.
+  - :heavy_plus_sign: Mixing both models can lead to surprises.
   - :heavy_plus_sign: We can't resolve symlinks without filesystem access
   - :heavy_plus_sign: Nix also doesn't support reading symlinks at eval-time
   - :heavy_minus_sign: What is "proper behavior"? Why can't we just not handle these cases?
@@ -135,14 +146,16 @@ Decision: `..` path components in relative paths are not supported, nor as input
 ### Trailing slashes
 [trailing-slashes]: #trailing-slashes
 
-Context: Relative paths can contain trailing slashes, like `foo/`, indicating that the path points to a directory and not a file
+Observing: Subpaths can contain trailing slashes, like `foo/`, indicating that the path points to a directory and not a file
+
+Considering: Paths should be as consistent as possible, there should only be a single normalisation for the same path
 
 Decision: All functions remove trailing slashes in their results
 
 <details>
 <summary>Arguments</summary>
 
-- :heavy_plus_sign: It enables the law that if `normalise p == normalise q` then `$(stat p) == $(stat q)`.
+- :heavy_plus_sign: It allows normalisations to be unique, in that there's only a single normalisation for the same path
 - Comparison to other frameworks to figure out the least surprising behavior:
   - :heavy_plus_sign: Nix itself doesn't preserve trailing newlines when parsing and appending its paths
   - :heavy_minus_sign: [Rust's std::path](https://doc.rust-lang.org/std/path/index.html) does preserve them during [construction](https://doc.rust-lang.org/std/path/struct.Path.html#method.new)
@@ -157,14 +170,12 @@ Decision: All functions remove trailing slashes in their results
 - :heavy_plus_sign: Nix's builtin function `dirOf` gives an unexpected result for paths with trailing slashes: `dirOf "foo/bar/" == "foo/bar"`.
   Inconsistently, `baseNameOf` works correctly though: `baseNameOf "foo/bar/" == "bar"`.
   - :heavy_minus_sign: We are writing a path library to improve handling of paths though, so we shouldn't use these functions and discourage their use
-- :heavy_minus_sign: Unexpected result when normalising intermediate paths, like `normalise ("foo" + "/") + "bar" == "foobar"`
+- :heavy_minus_sign: Unexpected result when normalising intermediate paths, like `relative.normalise ("foo" + "/") + "bar" == "foobar"`
   - :heavy_plus_sign: Does this have a real use case?
   - :heavy_plus_sign: Don't use `+` to append paths, this library has a `join` function for that
     - :heavy_minus_sign: Users might use `+` out of habit though
 - :heavy_plus_sign: The `realpath` command also removes trailing slashes
 - :heavy_plus_sign: Even with a trailing slash, the path is the same, it's only an indication that it's a directory
-- :heavy_plus_sign: Normalisation should return the same string when we know it's the same path, so removing the slash.
-  This way we can use the result as an attribute key.
 
 </details>
 

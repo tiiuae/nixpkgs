@@ -1399,52 +1399,52 @@ runTests {
     expected = "signed integer or list of (boolean or string)";
   };
 
-  testRelativeNormaliseExample1 = {
-    expr = path.relative.normalise "foo//bar";
+  testSubpathNormaliseExample1 = {
+    expr = path.subpath.normalise "foo//bar";
     expected = "./foo/bar";
   };
-  testRelativeNormaliseExample2 = {
-    expr = path.relative.normalise "foo/./bar";
+  testSubpathNormaliseExample2 = {
+    expr = path.subpath.normalise "foo/./bar";
     expected = "./foo/bar";
   };
-  testRelativeNormaliseExample3 = {
-    expr = path.relative.normalise "foo/bar";
+  testSubpathNormaliseExample3 = {
+    expr = path.subpath.normalise "foo/bar";
     expected = "./foo/bar";
   };
-  testRelativeNormaliseExample4 = {
-    expr = path.relative.normalise "foo/bar/";
+  testSubpathNormaliseExample4 = {
+    expr = path.subpath.normalise "foo/bar/";
     expected = "./foo/bar";
   };
-  testRelativeNormaliseExample5 = {
-    expr = path.relative.normalise "foo/bar/.";
+  testSubpathNormaliseExample5 = {
+    expr = path.subpath.normalise "foo/bar/.";
     expected = "./foo/bar";
   };
-  testRelativeNormaliseExample6 = {
-    expr = path.relative.normalise ".";
+  testSubpathNormaliseExample6 = {
+    expr = path.subpath.normalise ".";
     expected = "./.";
   };
-  testRelativeNormaliseExample7 = {
-    expr = (builtins.tryEval (path.relative.normalise "foo/../bar")).success;
+  testSubpathNormaliseExample7 = {
+    expr = (builtins.tryEval (path.subpath.normalise "foo/../bar")).success;
     expected = false;
   };
-  testRelativeNormaliseExample8 = {
-    expr = (builtins.tryEval (path.relative.normalise "")).success;
+  testSubpathNormaliseExample8 = {
+    expr = (builtins.tryEval (path.subpath.normalise "")).success;
     expected = false;
   };
-  testRelativeNormaliseExample9 = {
-    expr = (builtins.tryEval (path.relative.normalise "/foo")).success;
+  testSubpathNormaliseExample9 = {
+    expr = (builtins.tryEval (path.subpath.normalise "/foo")).success;
     expected = false;
   };
-  testRelativeNormaliseValidDots = {
-    expr = path.relative.normalise "./foo/.bar/.../baz...qux";
+  testSubpathNormaliseValidDots = {
+    expr = path.subpath.normalise "./foo/.bar/.../baz...qux";
     expected = "./foo/.bar/.../baz...qux";
   };
-  testRelativeNormaliseWrongType = {
-    expr = (builtins.tryEval (path.relative.normalise null)).success;
+  testSubpathNormaliseWrongType = {
+    expr = (builtins.tryEval (path.subpath.normalise null)).success;
     expected = false;
   };
-  testRelativeNormaliseTwoDots = {
-    expr = (builtins.tryEval (path.relative.normalise "..")).success;
+  testSubpathNormaliseTwoDots = {
+    expr = (builtins.tryEval (path.subpath.normalise "..")).success;
     expected = false;
   };
 }

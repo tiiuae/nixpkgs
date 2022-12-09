@@ -26,8 +26,8 @@ let
 
   pretty = toPretty { multiline = false; };
 
-  # Returns true if the value is a valid relative path string, otherwise throws an error
-  validRelativeString = value: errorPrefix:
+  # Returns true if the value is a valid subpath string, otherwise throws an error
+  validSubpathString = value: errorPrefix:
     if ! isString value then
       throw "${errorPrefix}: Not a string"
     else if value == "" then
@@ -36,9 +36,9 @@ let
       throw "${errorPrefix}: The string is an absolute path because it starts with `/`"
     else true;
 
-  # Splits and normalises a relative path string into its components.
+  # Splits and normalises a subpath string into its components.
   # Errors for ".." components and doesn't include "." components
-  splitRelative = path: errorPrefix:
+  splitSubpath = path: errorPrefix:
     let
       # Split the string into its parts using regex for efficiency. This regex
       # matches patterns like "/", "/./", "/././", with arbitrarily many "/"s
@@ -92,83 +92,83 @@ let
           value
       ) componentCount;
 
-  # joins relative path components together
-  joinRelative = components:
+  # joins subpath components together
+  joinSubpath = components:
     "./" +
-    # An empty string is not a valid relative path, so we need to return a `.` when we have no components
+    # An empty string is not a valid subpath, so we need to return a `.` when we have no components
     (if components == [] then "."
     else concatStringsSep "/" components);
 
 in /* No rec! Add dependencies on this file just above */ {
 
-  /* Normalise relative paths.
+  /* Normalises a subpath.
 
-  - Limit repeating `/` to a single one
+  - Limits repeating `/` to a single one
 
-  - Remove redundant `.` components
+  - Removes redundant `.` components
 
-  - Error on empty strings
+  - Errors on empty strings
 
-  - Remove trailing `/` and `/.`
+  - Removes trailing `/` and `/.`
 
-  - Error on `..` path components
+  - Errors on `..` path components
 
-  - Add leading `./`
+  - Adds leading `./`
 
   Laws:
 
   - (Idempotency) Normalising multiple times gives the same result:
-    `relative.normalise (relative.normalise p) == relative.normalise p`
+    `subpath.normalise (subpath.normalise p) == subpath.normalise p`
 
   - (Uniqueness) There's only a single normalisation for a path:
-    `relative.normalise p != relative.normalise q => $(realpath -ms ${p}) != $(realpath -ms ${q})`
+    `subpath.normalise p != subpath.normalise q => $(realpath -ms ${p}) != $(realpath -ms ${q})`
 
   - Doesn't change the path according to `realpath -ms`:
-    `relative.normalise p != relative.normalise q => $(realpath -ms ${p}) != $(realpath -ms ${q})`
+    `$(realpath -ms ${p}) == $(realpath -ms ${subpath.normalise p})`
 
   Example:
     # limits repeating `/` to a single one
-    relative.normalise "foo//bar"
+    subpath.normalise "foo//bar"
     => "./foo/bar"
 
     # removes redundant `.` components
-    relative.normalise "foo/./bar"
+    subpath.normalise "foo/./bar"
     => "./foo/bar"
 
     # adds leading `./`
-    relative.normalise "foo/bar"
+    subpath.normalise "foo/bar"
     => "./foo/bar"
 
     # removes trailing `/`
-    relative.normalise "foo/bar/"
+    subpath.normalise "foo/bar/"
     => "./foo/bar"
 
     # removes trailing `/.`
-    relative.normalise "foo/bar/."
+    subpath.normalise "foo/bar/."
     => "./foo/bar"
 
     # Returns the current directory as `./.`
-    relative.normalise "."
+    subpath.normalise "."
     => "./."
 
     # errors on `..` path components
-    relative.normalise "foo/../bar"
+    subpath.normalise "foo/../bar"
     => <error>
 
     # errors on empty string
-    relative.normalise ""
+    subpath.normalise ""
     => <error>
 
     # errors on absolute path
-    relative.normalise "/foo"
+    subpath.normalise "/foo"
     => <error>
 
   Type:
-    relative.normalise :: String -> String
+    subpath.normalise :: String -> String
   */
-  relative.normalise = path:
-    assert validRelativeString path "lib.path.relative.normalise: Argument ${pretty path} is not a valid relative path string";
-    let components = splitRelative path "lib.path.relative.normalise: Argument ${path} can't be normalised";
-    in joinRelative components;
+  subpath.normalise = path:
+  assert validSubpathString path "lib.path.subpath.normalise: Argument ${pretty path} is not a valid subpath string";
+    let components = splitSubpath path "lib.path.subpath.normalise: Argument ${path} can't be normalised";
+    in joinSubpath components;
 
 }

@@ -1400,51 +1400,51 @@ runTests {
   };
 
   testRelativeNormaliseExample1 = {
-    expr = path.relativeNormalise "foo//bar";
+    expr = path.relative.normalise "foo//bar";
     expected = "./foo/bar";
   };
   testRelativeNormaliseExample2 = {
-    expr = path.relativeNormalise "foo/./bar";
+    expr = path.relative.normalise "foo/./bar";
     expected = "./foo/bar";
   };
   testRelativeNormaliseExample3 = {
-    expr = path.relativeNormalise "foo/bar";
+    expr = path.relative.normalise "foo/bar";
     expected = "./foo/bar";
   };
   testRelativeNormaliseExample4 = {
-    expr = path.relativeNormalise "foo/bar/";
+    expr = path.relative.normalise "foo/bar/";
     expected = "./foo/bar";
   };
   testRelativeNormaliseExample5 = {
-    expr = path.relativeNormalise "foo/bar/.";
+    expr = path.relative.normalise "foo/bar/.";
     expected = "./foo/bar";
   };
   testRelativeNormaliseExample6 = {
-    expr = path.relativeNormalise ".";
+    expr = path.relative.normalise ".";
     expected = "./.";
   };
   testRelativeNormaliseExample7 = {
-    expr = (builtins.tryEval (path.relativeNormalise "foo/../bar")).success;
+    expr = (builtins.tryEval (path.relative.normalise "foo/../bar")).success;
     expected = false;
   };
   testRelativeNormaliseExample8 = {
-    expr = (builtins.tryEval (path.relativeNormalise "")).success;
+    expr = (builtins.tryEval (path.relative.normalise "")).success;
     expected = false;
   };
   testRelativeNormaliseExample9 = {
-    expr = (builtins.tryEval (path.relativeNormalise "/foo")).success;
+    expr = (builtins.tryEval (path.relative.normalise "/foo")).success;
     expected = false;
   };
   testRelativeNormaliseValidDots = {
-    expr = path.relativeNormalise "./foo/.bar/.../baz...qux";
+    expr = path.relative.normalise "./foo/.bar/.../baz...qux";
     expected = "./foo/.bar/.../baz...qux";
   };
   testRelativeNormaliseWrongType = {
-    expr = (builtins.tryEval (path.relativeNormalise null)).success;
+    expr = (builtins.tryEval (path.relative.normalise null)).success;
     expected = false;
   };
   testRelativeNormaliseTwoDots = {
-    expr = (builtins.tryEval (path.relativeNormalise "..")).success;
+    expr = (builtins.tryEval (path.relative.normalise "..")).success;
     expected = false;
   };
 }

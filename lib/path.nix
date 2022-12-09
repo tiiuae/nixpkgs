@@ -118,57 +118,57 @@ in /* No rec! Add dependencies on this file just above */ {
   Laws:
 
   - (Idempotency) Normalising multiple times gives the same result:
-    `relativeNormalise (relativeNormalise p) == relativeNormalise p`
+    `relative.normalise (relative.normalise p) == relative.normalise p`
 
   - (Uniqueness) There's only a single normalisation for a path:
-    `normalise p != normalise q => $(realpath -ms ${p}) != $(realpath -ms ${q})`
+    `relative.normalise p != relative.normalise q => $(realpath -ms ${p}) != $(realpath -ms ${q})`
 
   - Doesn't change the path according to `realpath -ms`:
-    `normalise p != normalise q => $(realpath -ms ${p}) != $(realpath -ms ${q})`
+    `relative.normalise p != relative.normalise q => $(realpath -ms ${p}) != $(realpath -ms ${q})`
 
   Example:
     # limits repeating `/` to a single one
-    relativeNormalise "foo//bar"
+    relative.normalise "foo//bar"
     => "./foo/bar"
 
     # removes redundant `.` components
-    relativeNormalise "foo/./bar"
+    relative.normalise "foo/./bar"
     => "./foo/bar"
 
     # adds leading `./`
-    relativeNormalise "foo/bar"
+    relative.normalise "foo/bar"
     => "./foo/bar"
 
     # removes trailing `/`
-    relativeNormalise "foo/bar/"
+    relative.normalise "foo/bar/"
     => "./foo/bar"
 
     # removes trailing `/.`
-    relativeNormalise "foo/bar/."
+    relative.normalise "foo/bar/."
     => "./foo/bar"
 
     # Returns the current directory as `./.`
-    relativeNormalise "."
+    relative.normalise "."
     => "./."
 
     # errors on `..` path components
-    relativeNormalise "foo/../bar"
+    relative.normalise "foo/../bar"
     => <error>
 
     # errors on empty string
-    relativeNormalise ""
+    relative.normalise ""
     => <error>
 
     # errors on absolute path
-    relativeNormalise "/foo"
+    relative.normalise "/foo"
     => <error>
 
   Type:
-    relativeNormalise :: String -> String
+    relative.normalise :: String -> String
   */
-  relativeNormalise = path:
-    assert validRelativeString path "lib.path.relativeNormalise: Argument ${pretty path} is not a valid relative path string";
-    let components = splitRelative path "lib.path.relativeNormalise: Argument ${path} can't be normalised";
+  relative.normalise = path:
+    assert validRelativeString path "lib.path.relative.normalise: Argument ${pretty path} is not a valid relative path string";
+    let components = splitRelative path "lib.path.relative.normalise: Argument ${path} can't be normalised";
     in joinRelative components;
 
 }

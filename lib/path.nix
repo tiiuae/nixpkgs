@@ -5,6 +5,7 @@ let
   inherit (builtins)
     isString
     split
+    match
     ;
 
   inherit (lib.lists)
@@ -27,13 +28,16 @@ let
   pretty = toPretty { multiline = false; };
 
   # Returns true if the value is a valid subpath string, otherwise throws an error
-  isValidRelativePath = value: errorPrefix:
+  isValidSubpath = value: errorPrefix:
     if ! isString value then
       throw "${errorPrefix}:\n    Not a string"
     else if value == "" then
       throw "${errorPrefix}:\n    The string is empty"
     else if substring 0 1 value == "/" then
       throw "${errorPrefix}:\n    The string is an absolute path because it starts with `/`"
+    else if match "(.*/)?\\.\\.(/.*)?" value != null then
+      # We don't support ".." components, see ./path.md
+      throw "${errorPrefix}:\n    The string contains a `..` component, which is not allowed in subpaths"
     else true;
 
   # Splits and normalises a subpath string into its components.
@@ -78,18 +82,9 @@ let
       # way over a combination of `filter`, `init` and `tail` makes it more
       # efficient, because we don't allocate any intermediate lists
       else genList (index:
-        let
-          # To get to the element we need to add the number of parts we skip and
-          # multiply by two due to the interleaved layout of `parts`
-          value = elemAt parts ((skipStart + index) * 2);
-        in
-
-        # We don't support ".." components, see ./path.md
-        if value == ".." then
-          throw "${errorPrefix}:\n    Path string contains contains a `..` component, which is not supported"
-        # Otherwise just return the part unchanged
-        else
-          value
+        # To get to the element we need to add the number of parts we skip and
+        # multiply by two due to the interleaved layout of `parts`
+        elemAt parts ((skipStart + index) * 2)
       ) componentCount;
 
   # joins subpath components together
@@ -170,7 +165,7 @@ in /* No rec! Add dependencies on this file at the top. */ {
     => <error>
   */
   subpath.normalise = path:
-  assert isValidRelativePath path "lib.path.subpath.normalise: Argument ${pretty path} is not a valid relative path string";
+    assert isValidSubpath path "lib.path.subpath.normalise: Argument ${pretty path} is not a valid subpath string";
     let components = splitSubpath path "lib.path.subpath.normalise: Argument ${path} can't be normalised";
     in joinSubpath components;
 

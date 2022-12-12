@@ -29,20 +29,24 @@ let
 
   # Returns true if the value is a valid subpath string, otherwise throws an error
   isValidSubpath = value: errorPrefix:
-    if ! isString value then
-      throw "${errorPrefix}:\n    Not a string"
-    else if value == "" then
-      throw "${errorPrefix}:\n    The string is empty"
-    else if substring 0 1 value == "/" then
-      throw "${errorPrefix}:\n    The string is an absolute path because it starts with `/`"
-    else if match "(.*/)?\\.\\.(/.*)?" value != null then
-      # We don't support ".." components, see ./path.md
-      throw "${errorPrefix}:\n    The string contains a `..` component, which is not allowed in subpaths"
+    if ! isString value then throw ''
+      ${errorPrefix}:
+          Not a string''
+    else if value == "" then throw ''
+      ${errorPrefix}:
+          The string is empty''
+    else if substring 0 1 value == "/" then throw ''
+      ${errorPrefix}:
+          The string is an absolute path because it starts with `/`''
+    # We don't support ".." components, see ./path.md
+    else if match "(.*/)?\\.\\.(/.*)?" value != null then throw ''
+      ${errorPrefix}:
+          The string contains a `..` component, which is not allowed in subpaths''
     else true;
 
   # Splits and normalises a subpath string into its components.
   # Errors for ".." components and doesn't include "." components
-  splitSubpath = path: errorPrefix:
+  splitRelPath = path:
     let
       # Split the string into its parts using regex for efficiency. This regex
       # matches patterns like "/", "/./", "/././", with arbitrarily many "/"s
@@ -78,20 +82,20 @@ let
       # they don't refer to the same character
       if path == "." then []
 
-      # And we can use this to generate the result list directly. Doing it this
-      # way over a combination of `filter`, `init` and `tail` makes it more
-      # efficient, because we don't allocate any intermediate lists
+      # Generate the result list directly. This is more efficient than a
+      # combination of `filter`, `init` and `tail`, because here we don't
+      # allocate any intermediate lists
       else genList (index:
         # To get to the element we need to add the number of parts we skip and
         # multiply by two due to the interleaved layout of `parts`
         elemAt parts ((skipStart + index) * 2)
       ) componentCount;
 
-  # joins subpath components together
-  joinSubpath = components:
+  # joins relative path components together
+  joinRelPath = components:
     # Always return relative paths with `./` as a prefix (./path.md#leading-dots-for-subpaths)
     "./" +
-    # An empty string is not a valid subpath, so we need to return a `.` when we have no components
+    # An empty string is not a valid relative path, so we need to return a `.` when we have no components
     (if components == [] then "." else concatStringsSep "/" components);
 
 in /* No rec! Add dependencies on this file at the top. */ {
@@ -119,13 +123,13 @@ in /* No rec! Add dependencies on this file at the top. */ {
 
         subpath.normalise (subpath.normalise p) == subpath.normalise p
 
-  - (Uniqueness) There's only a single normalisation for a path:
+  - (Uniqueness) There's only a single normalisation for the paths that lead to the same file system node:
 
-        subpath.normalise p != subpath.normalise q => $(realpath -ms ${p}) != $(realpath -ms ${q})
+        subpath.normalise p != subpath.normalise q => $(realpath ${p}) != $(realpath ${q})
 
-  - Doesn't change the path according to `realpath -ms`:
+  - Doesn't change the path according to `realpath`:
 
-        $(realpath -ms ${p}) == $(realpath -ms ${subpath.normalise p})
+        $(realpath ${p}) == $(realpath ${subpath.normalise p})
 
   Example:
     # limit repeating `/` to a single one
@@ -165,8 +169,8 @@ in /* No rec! Add dependencies on this file at the top. */ {
     => <error>
   */
   subpath.normalise = path:
-    assert isValidSubpath path "lib.path.subpath.normalise: Argument ${pretty path} is not a valid subpath string";
-    let components = splitSubpath path "lib.path.subpath.normalise: Argument ${path} can't be normalised";
-    in joinSubpath components;
+    assert isValidSubpath path
+      "lib.path.subpath.normalise: Argument ${pretty path} is not a valid subpath string";
+    joinRelPath (splitRelPath path);
 
 }

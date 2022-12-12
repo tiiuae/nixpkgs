@@ -8,10 +8,10 @@ It exists to support the native Nix [path value type] with extra functionality.
 [filesystem paths]: https://en.m.wikipedia.org/wiki/Path_(computing)
 [path value type]: https://nixos.org/manual/nix/stable/language/values.html#type-path
 
-As an extension of the path value type, it inherits the same use case intensions and limitations:
-- Only use the path value type for paths accessed at Nix evaluation time, such as the local project source.
-- Path value types cannot point to derivations, so they are unfit to represent dependencies.
-- Path value types implicitly import the path into the Nix store when interpolated, so they are dangerous to use for paths only intended to be accessed at build- or run-time, as you risk importing the path from the evaluation system instead.
+As an extension of the path value type, it inherits the same intended use cases and limitations:
+- Only use paths to access files at evaluation time, such as the local project source.
+- Paths cannot point to derivations, so they are unfit to represent dependencies.
+- A path implicitly imports the referenced files into the Nix store when interpolated to a string. Therefore paths are not suitable to access files at build- or run-time, as you risk importing the path from the evaluation system instead.
 
 Overall, this library works with two types of paths:
 - Absolute paths are represented with the Nix [path value type]. Nix automatically normalises these paths.
@@ -102,7 +102,7 @@ Observing: Subpaths such as `foo/bar` can be represented in various ways:
 - list with all the components: `[ "foo" "bar" ]`
 - attribute set: `{ type = "relative-path"; components = [ "foo" "bar" ]; }`
 
-Considering: Paths should be as safe to use as possible, we should generate string outputs in the library and not encourage users to do that instead by returning lists.
+Considering: Paths should be as safe to use as possible. We should generate string outputs in the library and not encourage users to do that themselves.
 
 Decision: Paths are represented as strings.
 

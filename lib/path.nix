@@ -38,7 +38,7 @@ let
     else if substring 0 1 value == "/" then throw ''
       ${errorPrefix}:
           The string is an absolute path because it starts with `/`''
-    # We don't support ".." components, see ./path.md
+    # We don't support ".." components, see ./path.md#parent-directory
     else if match "(.*/)?\\.\\.(/.*)?" value != null then throw ''
       ${errorPrefix}:
           The string contains a `..` component, which is not allowed in subpaths''
@@ -68,7 +68,7 @@ let
       # To assemble the final list of components we want to:
       # - Skip a potential leading ".", normalising "./foo" to "foo"
       # - Skip a potential trailing "." or "", normalising "foo/" and "foo/." to
-      #   "foo"
+      #   "foo". See ./path.md#trailing-slashes
       skipStart = if head parts == "." then 1 else 0;
       skipEnd = if last parts == "." || last parts == "" then 1 else 0;
 
@@ -93,7 +93,7 @@ let
 
   # joins relative path components together
   joinRelPath = components:
-    # Always return relative paths with `./` as a prefix (./path.md#leading-dots-for-subpaths)
+    # Always return relative paths with `./` as a prefix (./path.md#leading-dots-for-relative-paths)
     "./" +
     # An empty string is not a valid relative path, so we need to return a `.` when we have no components
     (if components == [] then "." else concatStringsSep "/" components);

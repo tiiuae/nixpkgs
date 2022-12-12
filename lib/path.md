@@ -18,7 +18,7 @@ Overall, this library works with two types of paths:
 - Subpaths are represented with the [string value type] since path value types don't support relative paths. This library normalises these paths as safely as possible. Absolute paths in strings are not supported.
 
   A subpath refers to a specific file or directory within an absolute base directory.
-  It is a stricter form of a relative path, which notably must not start with `/` and [does not support `..` components](#parents).
+  It is a stricter form of a relative path, which notably must not start with `/` and [does not support `..` components][parents].
 
 [string value type]: https://nixos.org/manual/nix/stable/language/values.html#type-string
 
@@ -81,7 +81,7 @@ Decision: It should be `./.`.
 <details>
 <summary>Arguments</summary>
 
-- :heavy_plus_sign: `./` would be inconsistent with [the decision to not persist trailing slashes](#trailing-slashes).
+- :heavy_plus_sign: `./` would be inconsistent with [the decision to not persist trailing slashes][trailing-slashes].
 - :heavy_minus_sign: `.` is how `realpath` normalises paths.
 - :heavy_plus_sign: `.` can be interpreted as a shell command (it's a builtin for sourcing files in `bash` and `zsh`).
 - :heavy_plus_sign: `.` would be the only path without a `/`. It could not be used as a Nix path expression, since those require at least one `/` to be parsed as such.
@@ -89,7 +89,7 @@ Decision: It should be `./.`.
   - :heavy_minus_sign: We don't require users to type this though, as it's only output by the library.
     As inputs all three variants are supported for subpaths (and we can't do anything about absolute paths)
 - :heavy_minus_sign: `builtins.dirOf "foo" == "."`, so `.` would be consistent with that.
-- :heavy_plus_sign: `./.` is consistent with the [decision to have leading `./`](#leading-dots).
+- :heavy_plus_sign: `./.` is consistent with the [decision to have leading `./`][leading-dots].
 - :heavy_plus_sign: `./.` is a valid Nix path expression, although this property does not hold for every relative path or subpath.
 
 </details>

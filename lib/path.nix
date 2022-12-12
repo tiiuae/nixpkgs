@@ -1,4 +1,4 @@
-# Functions for working with paths, see ./path-design.md
+# Functions for working with paths, see ./path.md
 { lib }:
 let
 
@@ -27,13 +27,13 @@ let
   pretty = toPretty { multiline = false; };
 
   # Returns true if the value is a valid subpath string, otherwise throws an error
-  validSubpathString = value: errorPrefix:
+  isValidRelativePath = value: errorPrefix:
     if ! isString value then
-      throw "${errorPrefix}: Not a string"
+      throw "${errorPrefix}:\n    Not a string"
     else if value == "" then
-      throw "${errorPrefix}: The string is empty"
+      throw "${errorPrefix}:\n    The string is empty"
     else if substring 0 1 value == "/" then
-      throw "${errorPrefix}: The string is an absolute path because it starts with `/`"
+      throw "${errorPrefix}:\n    The string is an absolute path because it starts with `/`"
     else true;
 
   # Splits and normalises a subpath string into its components.
@@ -84,9 +84,9 @@ let
           value = elemAt parts ((skipStart + index) * 2);
         in
 
-        # We don't support ".." components, see ./path-design.md
+        # We don't support ".." components, see ./path.md
         if value == ".." then
-          throw "${errorPrefix}: Path string contains contains a `..` component, which is not supported"
+          throw "${errorPrefix}:\n    Path string contains contains a `..` component, which is not supported"
         # Otherwise just return the part unchanged
         else
           value
@@ -94,80 +94,83 @@ let
 
   # joins subpath components together
   joinSubpath = components:
+    # Always return relative paths with `./` as a prefix (./path.md#leading-dots-for-subpaths)
     "./" +
     # An empty string is not a valid subpath, so we need to return a `.` when we have no components
-    (if components == [] then "."
-    else concatStringsSep "/" components);
+    (if components == [] then "." else concatStringsSep "/" components);
 
-in /* No rec! Add dependencies on this file just above */ {
+in /* No rec! Add dependencies on this file at the top. */ {
 
-  /* Normalises a subpath.
+  /* Normalise a subpath.
 
-  - Limits repeating `/` to a single one
+  - Limit repeating `/` to a single one
 
-  - Removes redundant `.` components
+  - Remove redundant `.` components
 
-  - Errors on empty strings
+  - Error on empty strings
 
-  - Removes trailing `/` and `/.`
+  - Remove trailing `/` and `/.`
 
-  - Errors on `..` path components
+  - Error on `..` path components
 
-  - Adds leading `./`
+  - Add leading `./`
+
+  Type:
+    subpath.normalise :: String -> String
 
   Laws:
 
   - (Idempotency) Normalising multiple times gives the same result:
-    `subpath.normalise (subpath.normalise p) == subpath.normalise p`
+
+        subpath.normalise (subpath.normalise p) == subpath.normalise p
 
   - (Uniqueness) There's only a single normalisation for a path:
-    `subpath.normalise p != subpath.normalise q => $(realpath -ms ${p}) != $(realpath -ms ${q})`
+
+        subpath.normalise p != subpath.normalise q => $(realpath -ms ${p}) != $(realpath -ms ${q})
 
   - Doesn't change the path according to `realpath -ms`:
-    `$(realpath -ms ${p}) == $(realpath -ms ${subpath.normalise p})`
+
+        $(realpath -ms ${p}) == $(realpath -ms ${subpath.normalise p})
 
   Example:
-    # limits repeating `/` to a single one
+    # limit repeating `/` to a single one
     subpath.normalise "foo//bar"
     => "./foo/bar"
 
-    # removes redundant `.` components
+    # remove redundant `.` components
     subpath.normalise "foo/./bar"
     => "./foo/bar"
 
-    # adds leading `./`
+    # add leading `./`
     subpath.normalise "foo/bar"
     => "./foo/bar"
 
-    # removes trailing `/`
+    # remove trailing `/`
     subpath.normalise "foo/bar/"
     => "./foo/bar"
 
-    # removes trailing `/.`
+    # remove trailing `/.`
     subpath.normalise "foo/bar/."
     => "./foo/bar"
 
-    # Returns the current directory as `./.`
+    # Return the current directory as `./.`
     subpath.normalise "."
     => "./."
 
-    # errors on `..` path components
+    # error on `..` path components
     subpath.normalise "foo/../bar"
     => <error>
 
-    # errors on empty string
+    # error on empty string
     subpath.normalise ""
     => <error>
 
-    # errors on absolute path
+    # error on absolute path
     subpath.normalise "/foo"
     => <error>
-
-  Type:
-    subpath.normalise :: String -> String
   */
   subpath.normalise = path:
-  assert validSubpathString path "lib.path.subpath.normalise: Argument ${pretty path} is not a valid subpath string";
+  assert isValidRelativePath path "lib.path.subpath.normalise: Argument ${pretty path} is not a valid relative path string";
     let components = splitSubpath path "lib.path.subpath.normalise: Argument ${path} can't be normalised";
     in joinSubpath components;
 

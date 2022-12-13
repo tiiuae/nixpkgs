@@ -18,7 +18,7 @@ Overall, this library works with two types of paths:
 - Subpaths are represented with the [string value type] since path value types don't support relative paths. This library normalises these paths as safely as possible. Absolute paths in strings are not supported.
 
   A subpath refers to a specific file or directory within an absolute base directory.
-  It is a stricter form of a relative path, which notably must not start with `/` and [does not support `..` components][parents].
+  It is a stricter form of a relative path, notably [without support for `..` components][parents] since those could escape the base directory.
 
 [string value type]: https://nixos.org/manual/nix/stable/language/values.html#type-string
 

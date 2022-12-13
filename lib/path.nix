@@ -21,27 +21,21 @@ let
     substring
     ;
 
-  inherit (lib.generators)
-    toPretty
-    ;
-
-  pretty = toPretty { multiline = false; };
-
   # Returns true if the value is a valid subpath string, otherwise throws an error
   isValidSubpath = value: errorPrefix:
     if ! isString value then throw ''
       ${errorPrefix}:
-          Not a string''
+          The given value is of type ${builtins.typeOf value}, but a string was expected''
     else if value == "" then throw ''
       ${errorPrefix}:
-          The string is empty''
+          The given string is empty''
     else if substring 0 1 value == "/" then throw ''
       ${errorPrefix}:
-          The string is an absolute path because it starts with `/`''
+          The given string "${value}" starts with a `/`, representing an absolute path''
     # We don't support ".." components, see ./path.md#parent-directory
     else if match "(.*/)?\\.\\.(/.*)?" value != null then throw ''
       ${errorPrefix}:
-          The string contains a `..` component, which is not allowed in subpaths''
+          The given string "${value}" contains a `..` component, which is not allowed in subpaths''
     else true;
 
   # Splits and normalises a subpath string into its components.
@@ -170,7 +164,7 @@ in /* No rec! Add dependencies on this file at the top. */ {
   */
   subpath.normalise = path:
     assert isValidSubpath path
-      "lib.path.subpath.normalise: Argument ${pretty path} is not a valid subpath string";
+      "lib.path.subpath.normalise: Argument is not a valid subpath string";
     joinRelPath (splitRelPath path);
 
 }

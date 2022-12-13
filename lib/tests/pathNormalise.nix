@@ -1,32 +1,34 @@
 # Used by ./path.sh
-# dir is a flat directory containing files with randomly-generated path-like values
+#
+# stringsDir is a flat directory containing files with randomly-generated
+# path-like values
+#
 # This file should return a { <value> = <lib.path.subpath.normalise value>; }
-# attribute set. If `normalise` fails to evaluate, "" is returned instead.
-# If "" is a value, it's not included in the result
-{ libpath, dir }:
+# attribute set for each value. If `normalise` fails to evaluate,
+# "" is returned instead. If not, the result is normalised again and returned
+# too
+{ libpath, stringsDir }:
 let
   lib = import libpath;
   inherit (lib.path.subpath) normalise;
 
   list = builtins.concatMap (name:
     let
-      str = builtins.readFile (dir + "/${name}");
-      onceRes = builtins.tryEval (normalise str);
-      twiceRes = builtins.tryEval (normalise onceRes.value);
+      str = builtins.readFile (stringsDir + "/${name}");
 
-      once = {
+      onceRes = builtins.tryEval (normalise str);
+      once = [{
         name = str;
         value = if onceRes.success then onceRes.value else "";
-      };
-      twice = {
+      }];
+
+      # Only try normalising it twice if the first normalisation succeeded
+      twiceRes = builtins.tryEval (normalise onceRes.value);
+      twice = lib.optional onceRes.success {
         name = onceRes.value;
         value = if twiceRes.success then twiceRes.value else "";
       };
-    in [ once ] ++ lib.optional onceRes.success twice
-  ) (builtins.attrNames (builtins.readDir dir));
+    in once ++ twice
+  ) (builtins.attrNames (builtins.readDir stringsDir));
 
-  attrs = builtins.listToAttrs list;
-
-  # Remove "" because bash can't handle that
-  result = removeAttrs attrs [""];
-in result
+in builtins.listToAttrs list

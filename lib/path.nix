@@ -119,7 +119,7 @@ in /* No rec! Add dependencies on this file at the top. */ {
 
   - (Uniqueness) There's only a single normalisation for the paths that lead to the same file system node:
 
-        subpath.normalise p != subpath.normalise q => $(realpath ${p}) != $(realpath ${q})
+        subpath.normalise p != subpath.normalise q -> $(realpath ${p}) != $(realpath ${q})
 
   - Doesn't change the path according to `realpath`:
 

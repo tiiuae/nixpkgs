@@ -52,7 +52,7 @@ let
     fetchers = callLibs ./fetchers.nix;
 
     # Eval-time filesystem handling
-    path = callLibs ./path.nix;
+    path = callLibs ./path;
     filesystem = callLibs ./filesystem.nix;
     sources = callLibs ./sources.nix;
 

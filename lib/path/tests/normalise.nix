@@ -1,4 +1,4 @@
-# Used by ./path.sh
+# Used by ./prop.sh
 #
 # stringsDir is a flat directory containing files with randomly-generated
 # path-like values

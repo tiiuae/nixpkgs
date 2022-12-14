@@ -11,7 +11,11 @@ with pkgs; stdenv.mkDerivation {
   buildInputs = [ nixdoc ];
   installPhase = ''
     function docgen {
-      nixdoc -c "$1" -d "$2" -f "../lib/$1.nix"  > "$out/$1.xml"
+      if [[ -e "../lib/$1.nix" ]]; then
+        nixdoc -c "$1" -d "$2" -f "../lib/$1.nix"  > "$out/$1.xml"
+      else
+        nixdoc -c "$1" -d "$2" -f "../lib/$1/default.nix"  > "$out/$1.xml"
+      fi
     }
 
     mkdir -p $out

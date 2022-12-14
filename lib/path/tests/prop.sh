@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 
-# This file implements property tests for the lib/path.nix functions.
+# This file implements property tests for the lib/path/default.nix functions.
 # It generates a lot of random path-like strings and runs the functions on
 # them, checking that the expected laws of the functions hold
 #
-# This file depends on ./pathGenerate.awk for random generation
-# and ./pathNormalise.nix for applying the functions to the generated paths
+# This file depends on ./generate.awk for random generation
+# and ./normalise.nix for applying the functions to the generated paths
 set -euo pipefail
 shopt -s inherit_errexit
 
 if test -z "${TEST_LIB:-}"; then
-  TEST_LIB="$(cd "$(dirname "${BASH_SOURCE[0]}")/.."; pwd)"
+  TEST_LIB="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.."; pwd)"
 fi
 
 tmp="$(mktemp -d)"
@@ -23,7 +23,7 @@ cd "$tmp/work"
 
 # Defaulting to a random seed but the first argument can override this
 seed=${1:-$RANDOM}
-echo >&2 "Using seed $seed, use \`lib/tests/path.sh $seed\` to reproduce this result"
+echo >&2 "Using seed $seed, use \`lib/path/tests/prop.sh $seed\` to reproduce this result"
 
 # The number of random paths to generate. This specific number was chosen to
 # be fast enough while still generating enough variety to detect bugs.
@@ -32,7 +32,7 @@ count=500
 # Set this to 1 or 2 to enable debug output
 debug=0
 
-# Fine tuning of the path generator in ./pathGenerate.awk
+# Fine tuning of the path generator in ./generate.awk
 # These values were chosen to balance the number of generated invalid paths
 # to the variance in generated paths. Set debug=2 just above to see the paths
 extradotweight=64   # The larger this value, the more dots are generated
@@ -56,7 +56,7 @@ while IFS= read -r -d $'\0' str; do
     echo -n "$str" > "$tmp/strings/${#strings[@]}"
     strings+=("$str")
 done < <(awk \
-    -f "$TEST_LIB"/tests/pathGenerate.awk \
+    -f "$TEST_LIB"/path/tests/generate.awk \
     -v seed="$seed" \
     -v count="$count" \
     -v extradotweight="$extradotweight" \
@@ -72,7 +72,7 @@ fi
 nix-instantiate --eval --strict --json \
     --arg libpath "$TEST_LIB" \
     --arg stringsDir "$tmp/strings" \
-    "$TEST_LIB"/tests/pathNormalise.nix \
+    "$TEST_LIB"/path/tests/normalise.nix \
     >"$tmp/result.json"
 
 # Uses some jq magic to turn the resulting attribute set into an associative

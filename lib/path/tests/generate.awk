@@ -9,7 +9,7 @@
 #
 # Can be called with
 #
-#     awk -f ./pathGenerate.awk -v <variable>=<value> \
+#     awk -f ./generate.awk -v <variable>=<value> \
 #       | tr '\0' '\n'
 #
 BEGIN {

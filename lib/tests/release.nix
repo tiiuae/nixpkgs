@@ -6,8 +6,6 @@
 pkgs.runCommand "nixpkgs-lib-tests" {
   buildInputs = [
     pkgs.nix
-    pkgs.jq
-    pkgs.bc
     (import ./check-eval.nix)
     (import ./maintainers.nix {
       inherit pkgs;
@@ -16,6 +14,9 @@ pkgs.runCommand "nixpkgs-lib-tests" {
     (import ./teams.nix {
       inherit pkgs;
       lib = import ../.;
+    })
+    (import ../path/tests {
+      inherit pkgs;
     })
   ];
 } ''
@@ -41,9 +42,6 @@ pkgs.runCommand "nixpkgs-lib-tests" {
 
     echo "Running lib/tests/sources.sh"
     TEST_LIB=$PWD/lib bash lib/tests/sources.sh
-
-    echo "Running lib/tests/path.sh"
-    TEST_LIB=$PWD/lib bash lib/tests/path.sh
 
     touch $out
 ''

@@ -1,5 +1,7 @@
 {
   lib,
+  stdenv,
+  buildPackages,
   pkg-config,
   fetchurl,
   meson,
@@ -47,6 +49,8 @@ python3.pkgs.buildPythonApplication rec {
     })
   ];
 
+  depsBuildBuild = [ pkg-config ];
+
   nativeBuildInputs = [
     meson
     ninja
@@ -56,6 +60,12 @@ python3.pkgs.buildPythonApplication rec {
     yelp-tools
     itstool
     gobject-introspection
+  ]
+  ++ lib.optionals (stdenv.buildPlatform != stdenv.hostPlatform) [
+    # Needed so Meson's build-time GTK check runs against native libs
+    buildPackages.python3
+    buildPackages.python3Packages.pygobject3
+    buildPackages.gtk3
   ];
 
   pythonPath = with python3.pkgs; [
@@ -83,6 +93,11 @@ python3.pkgs.buildPythonApplication rec {
     gst_all_1.gst-plugins-base
     gst_all_1.gst-plugins-good
   ];
+
+  # Help GI find typelibs during Meson's configure step in cross builds
+  preConfigure = lib.optionalString (stdenv.buildPlatform != stdenv.hostPlatform) ''
+    export GI_TYPELIB_PATH=${buildPackages.gtk3}/lib/girepository-1.0''${GI_TYPELIB_PATH:+:$GI_TYPELIB_PATH}
+  '';
 
   dontWrapGApps = true; # Prevent double wrapping
 
